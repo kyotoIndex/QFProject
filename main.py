@@ -16,6 +16,7 @@ from src.qf_project.quantum_encoding import encode_quantum_states
 from src.qf_project.train import train_model
 from src.qf_project.backtest import run_backtest
 from src.qf_project.utils import create_run_directory, ensure_directory, get_device, load_config, set_seed
+from src.qf_project.visualize import generate_visualizations
 
 
 def run_pipeline(config_path: str) -> None:
@@ -73,9 +74,30 @@ def run_pipeline(config_path: str) -> None:
         torch.save(model.state_dict(), symbol_dir / "best_model.pt")
         pd.DataFrame(history).to_csv(symbol_dir / "training_history.csv", index=False)
 
-        val_results = evaluate_model(model, dataloaders["val"], device, symbol_dir, "val")
-        test_results = evaluate_model(model, dataloaders["test"], device, symbol_dir, "test")
-        backtest_summary = run_backtest(test_results["collected"], config["strategy"], symbol_dir, "test")
+        val_results = evaluate_model(
+            model,
+            dataloaders["val"],
+            device,
+            symbol_dir,
+            "val",
+            timestamps=inputs["timestamps"]["val"],
+        )
+        test_results = evaluate_model(
+            model,
+            dataloaders["test"],
+            device,
+            symbol_dir,
+            "test",
+            timestamps=inputs["timestamps"]["test"],
+        )
+        backtest_summary = run_backtest(
+            test_results["collected"],
+            config["strategy"],
+            symbol_dir,
+            "test",
+            timestamps=inputs["timestamps"]["test"],
+        )
+        generate_visualizations(symbol_dir)
 
         summary[symbol] = {
             "validation_metrics": val_results["metrics"],

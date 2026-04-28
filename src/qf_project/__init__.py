@@ -7,3 +7,4 @@ from .model import QuantumFinanceModel
 from .quantum_encoding import encode_quantum_states
 from .train import train_model
 from .utils import load_config, set_seed
+from .visualize import generate_visualizations

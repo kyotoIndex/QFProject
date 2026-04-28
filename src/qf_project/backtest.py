@@ -13,7 +13,13 @@ def _max_drawdown(cumulative_returns: np.ndarray) -> float:
     return float(drawdown.min())
 
 
-def run_backtest(collected: dict, strategy_config: dict, output_dir: str | Path, split_name: str) -> dict[str, float]:
+def run_backtest(
+    collected: dict,
+    strategy_config: dict,
+    output_dir: str | Path,
+    split_name: str,
+    timestamps=None,
+) -> dict[str, float]:
     predicted_return = collected["predictions"]["return"]
     predicted_risk = np.argmax(collected["predictions"]["risk"], axis=1)
     realized_return = collected["targets"]["realized_return"]
@@ -40,6 +46,7 @@ def run_backtest(collected: dict, strategy_config: dict, output_dir: str | Path,
     output_path.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(
         {
+            "timestamp": pd.to_datetime(timestamps) if timestamps is not None else pd.NaT,
             "signal": signal,
             "realized_return": realized_return,
             "strategy_return": strategy_return,

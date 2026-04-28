@@ -9,7 +9,7 @@ import pandas as pd
 from .train import collect_predictions, summarize_predictions
 
 
-def evaluate_model(model, data_loader, device, output_dir: str | Path, split_name: str) -> dict:
+def evaluate_model(model, data_loader, device, output_dir: str | Path, split_name: str, timestamps=None) -> dict:
     collected = collect_predictions(model, data_loader, device)
     metrics = summarize_predictions(collected)
 
@@ -18,6 +18,7 @@ def evaluate_model(model, data_loader, device, output_dir: str | Path, split_nam
 
     prediction_frame = pd.DataFrame(
         {
+            "timestamp": pd.to_datetime(timestamps) if timestamps is not None else pd.NaT,
             "predicted_return": collected["predictions"]["return"],
             "predicted_direction_probability": collected["predictions"]["direction"],
             "predicted_risk_class": np.argmax(collected["predictions"]["risk"], axis=1),
