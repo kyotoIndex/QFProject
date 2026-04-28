@@ -1,0 +1,48 @@
+{
+  "AAPL": {
+    "validation_metrics": {
+      "rmse": 0.023131557995428487,
+      "mae": 0.018789028748869896,
+      "direction_accuracy": 0.5184275184275184,
+      "direction_f1": 0.6786885245901639,
+      "risk_macro_f1": 0.51409575514379
+    },
+    "test_metrics": {
+      "rmse": 0.02769542304327658,
+      "mae": 0.020505765452980995,
+      "direction_accuracy": 0.5503685503685504,
+      "direction_f1": 0.7024390243902439,
+      "risk_macro_f1": 0.44954924083780706
+    },
+    "backtest": {
+      "cumulative_return": -0.13338360981935415,
+      "annualized_sharpe": -0.19683039104739092,
+      "max_drawdown": -0.450701419445406,
+      "hit_rate": 0.4619164619164619,
+      "active_ratio": 0.8452088452088452
+    }
+  },
+  "SPY": {
+    "validation_metrics": {
+      "rmse": 0.01578200055364123,
+      "mae": 0.012400100007653236,
+      "direction_accuracy": 0.5282555282555282,
+      "direction_f1": 0.6913183279742765,
+      "risk_macro_f1": 0.46457068582645533
+    },
+    "test_metrics": {
+      "rmse": 0.015202216178856818,
+      "mae": 0.01125816535204649,
+      "direction_accuracy": 0.5945945945945946,
+      "direction_f1": 0.7457627118644068,
+      "risk_macro_f1": 0.4485885872618516
+    },
+    "backtest": {
+      "cumulative_return": -0.19944561411098627,
+      "annualized_sharpe": -1.0856707000067622,
+      "max_drawdown": -0.2076856878599912,
+      "hit_rate": 0.29975429975429974,
+      "active_ratio": 0.7272727272727273
+    }
+  }
+}

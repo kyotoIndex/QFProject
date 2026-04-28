@@ -1,0 +1,57 @@
+project:
+  name: quantum_finance_system
+  seed: 42
+  output_dir: outputs
+
+data:
+  symbols:
+    - AAPL
+    - SPY
+  start_date: "2015-01-01"
+  end_date: "2025-12-31"
+  interval: 1d
+  cache_dir: data_cache
+
+features:
+  lookback: 30
+  horizon: 1
+  volatility_window: 20
+  momentum_window: 10
+  bollinger_window: 20
+  rsi_window: 14
+  train_ratio: 0.7
+  val_ratio: 0.15
+
+quantum:
+  states:
+    - bullish_low_vol
+    - bullish_high_vol
+    - neutral
+    - bearish_low_vol
+    - bearish_high_vol
+  temperature: 1.0
+
+model:
+  recurrent_type: gru
+  hidden_size: 64
+  num_layers: 2
+  dropout: 0.2
+  input_projection_size: 64
+  mlp_hidden_size: 64
+
+training:
+  batch_size: 64
+  epochs: 30
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  early_stopping_patience: 5
+  gradient_clip_norm: 1.0
+  loss_weights:
+    regression: 1.0
+    direction: 1.0
+    risk: 1.0
+
+strategy:
+  buy_threshold: 0.002
+  sell_threshold: -0.002
+  high_risk_class: 2
