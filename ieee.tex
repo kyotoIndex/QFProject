@@ -1,0 +1,107 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{???: A Artificial Neural Network-based Quantum Finance System}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Xiong Haoyu}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+2330025090}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
+\textit{name of organization (of Aff.)}\\
+City, Country \\
+email address or ORCID}
+}
+
+\maketitle
+
+\begin{abstract}
+This paper studies the integration of artificial-intelligence-based financial sequence prediction with quantum-inspired financial modeling. The system combines engineered market features, probabilistic market-state encoding, recurrent neural networks, and backtesting to support return prediction, direction classification, and risk analysis.
+\end{abstract}
+
+\begin{IEEEkeywords}
+quantum finance, artificial intelligence, recurrent neural networks, GRU, financial time series, risk prediction
+\end{IEEEkeywords}
+
+\section{Introduction}
+Financial markets are noisy, nonlinear, and nonstationary systems in which prices, volatility, liquidity, and risk regimes evolve over time. These properties make market prediction and risk analysis difficult for purely linear or static models. Recent artificial intelligence (AI) methods, especially recurrent and deep neural networks, provide a data-driven way to learn temporal patterns from historical observations. In this project, we focus on the use of AI-based financial sequence prediction as the core technology and investigate how it can be connected with quantum finance through probabilistic market-state encoding and risk-aware decision support.
+
+\section{Literature Review of AI Technology}
+
+\subsection{What It Is}
+The technology discussed in these papers is not one single model, but a group of neural-network methods used to turn financial histories into forecasts, trading signals, or risk warnings. The common input is a time-ordered financial record: stock prices, returns, technical indicators, index values, or firm accounting ratios. The common output varies by paper. Wang et al. forecast the next-day closing prices of SSE, TWSE, KOSPI, and Nikkei 225 indices \cite{wang2016elman}; Shen et al. classify stock-index observations into long, short, and flat trading signals \cite{shen2018gru}; Sun et al. predict whether an enterprise's next half-year financial state will be healthy or distressed \cite{sun2011sffs}. Thus, the technology should be understood as neural financial sequence modeling rather than as only price prediction.
+
+The literature also shows that the models are built for different financial objects and time scales. Singh and Srivastava work with Google stock data from NASDAQ, using daily OHLC data and 36 technical variables before applying $(2D)^2$PCA and a DNN \cite{singh2017stock}. Chong et al. study high-frequency Korean stock-market returns using 38 KOSPI stocks, ten lagged 5-minute returns, and several data representations including raw returns, PCA, RBM, and autoencoder features \cite{chong2017deep}. Bao et al. move to a broader cross-market setting by testing six major stock indices and their index futures, combining wavelet denoising, stacked autoencoders, and LSTM forecasting \cite{bao2017deep}. Fischer and Krauss focus on the constituent stocks of the S\&P 500 from 1992 to 2015, where the task is to predict which stocks will outperform the cross-sectional median on the next day \cite{fischer2018deep}. Gunduz et al. study hourly direction prediction for Borsa Istanbul 100 stocks, while Lachiheb and Gouider predict five-minute TUNINDEX stock returns \cite{gunduz2017intraday,lachiheb2018hierarchical}. Nakano et al. extend the same ANN logic to Bitcoin, using 15-minute cryptocurrency data and technical indicators to generate trading positions \cite{nakano2018bitcoin}. Evans et al. represent an earlier trading-oriented branch by combining ANN and genetic algorithms for intraday foreign-exchange speculation \cite{evans2013utilizing}.
+
+This variety matters because the same term ``AI'' hides different design choices. A DNN on daily Google charts, a CNN on hourly BIST feature matrices, an LSTM on 240-day S\&P 500 return sequences, and a GA-optimized neural network for financial distress are not interchangeable. What connects them is the attempt to learn nonlinear patterns that are hard to specify with a fixed econometric form. What separates them is the financial decision they support: price forecasting, direction classification, trading execution, covariance/risk analysis, or distress warning.
+
+\subsection{How It Works}
+The first step is representation. Several papers show that the representation of financial data can matter as much as the neural architecture itself. Singh and Srivastava convert daily Google stock information and technical indicators into chart-like matrices, then use $(2D)^2$PCA for dimension reduction before the DNN; their best setting is a window size of 20 and a $10 \times 10$ reduced dimension, which gives a hit rate of 0.682 and total return of 1.365 in their experiment \cite{singh2017stock}. Chong et al. test raw returns and unsupervised representations for 5-minute KOSPI data, and find that DNNs outperform AR(10) clearly in training, but only slightly in the test set; the more useful result is that applying DNN to AR residuals reduces prediction error, while applying AR to DNN residuals does not have the same effect \cite{chong2017deep}. Bao et al. use a three-stage pipeline: wavelet transform first reduces noise, stacked autoencoders then extract higher-level features, and LSTM finally forecasts the next closing price \cite{bao2017deep}.
+
+The second step is choosing an architecture that fits the data structure. Recurrent models are used when the order of observations is central. Wang et al. combine an Elman recurrent network with a stochastic time effective function and use open, high, low, and close prices to forecast next-day closing prices for four Asian indices; their ST-ERNN model reports lower MAE, RMSE, and MAPE than BPNN, STNN, and ERNN baselines \cite{wang2016elman}. Fischer and Krauss use 240 consecutive standardized daily returns, roughly one trading year, as the LSTM input sequence for S\&P 500 stocks \cite{fischer2018deep}. Shen et al. use the same 240-day idea for index-level data and report that GRU-SVM reaches 51.7\% accuracy on the S\&P 500, compared with 51.4\% for GRU, 45.8\% for DNN, and 44.3\% for SVM \cite{shen2018gru}. These results support recurrent architectures for temporal dependence, although the absolute accuracy improvement remains modest.
+
+CNN and hierarchical DNN papers make a different argument: temporal order is not the only structure in financial data. Gunduz et al. construct a tensor using the current hour plus the previous 80 hourly observations, corresponding to ten trading days, and then rearrange features by hierarchical clustering on feature correlations. Their correlation-ordered CNN reaches a mean macro F-measure of 0.563, compared with 0.544 for randomly ordered CNN features and 0.547 for logistic regression \cite{gunduz2017intraday}. Lachiheb and Gouider use 45 TUNINDEX stocks from 2013 to 2017, producing 81,212 five-minute returns, and design a hierarchical DNN that uses both the target stock's past returns and other stocks' returns. Their new design performs best for 60\% of the ten tested stocks under MSE and reaches up/down prediction accuracy up to 73\% \cite{lachiheb2018hierarchical}. These two studies are useful because they show that cross-feature and cross-stock relations can be encoded before learning.
+
+The final step is evaluation, where the papers disagree in important ways. Pure prediction metrics include RMSE, MAE, MAPE, hit rate, correlation, accuracy, and F-measure. But several studies show that these metrics do not always tell the same story. Singh and Srivastava find that DNN gives better hit rate and return correlation than RBFNN and RNN, but they also state that RBFNN performs better on total return and RMSE \cite{singh2017stock}. Fischer and Krauss therefore evaluate LSTM forecasts through a long-short trading rule. Their LSTM portfolio earns 0.46\% average daily return before transaction costs and 0.26\% after costs for the top/flop ten-stock portfolio, outperforming random forest, DNN, and logistic regression in their setting \cite{fischer2018deep}. Nakano et al. make the same point in Bitcoin: ANN classification accuracy alone is not enough, so they test long-only, long-short, and strong-signal long-short strategies under bid-ask spreads of 0, 2.5, 5, and 10 bps \cite{nakano2018bitcoin}. For a finance project, this means that the model must be evaluated not only as a predictor but also as a decision rule.
+
+\subsection{Latest Research and Contemporary Technology}
+The later papers in the reviewed set move away from simple ANN forecasting and toward hybrid systems. Sun et al. already combine feature selection, PCA-based financial situation evaluation, and GA-optimized BPNN for dynamic distress prediction; their main contribution is not a new neural cell, but the rolling logic that uses period $t-0.5$ financial indicators to predict period $t$ and then checks the result against ex-post PCA evaluation \cite{sun2011sffs}. Wang et al. similarly hybridize recurrent learning with a stochastic time effective function, arguing that large market fluctuations increase relative prediction errors and that short-term prediction is more reliable than longer-horizon prediction \cite{wang2016elman}. These studies show an early concern with time-varying financial environments rather than static fitting.
+
+Deep representation learning becomes more explicit in Chong et al., Singh and Srivastava, and Bao et al. Chong et al. are especially cautious: their results do not provide a conclusive demonstration that DNNs dominate, because the test-set advantage over AR(10) is small and depends on representation; however, their residual experiment suggests that DNNs can extract information not captured by a linear autoregressive model \cite{chong2017deep}. Singh and Srivastava show that dimensionality and window length change results materially, with large windows and high-dimensional settings giving weaker performance \cite{singh2017stock}. Bao et al. address the same noise problem by combining WT, SAE, and LSTM, and they explicitly evaluate both predictive accuracy and profitability across six stock-index markets rather than using one market only \cite{bao2017deep}. Taken together, these papers suggest that contemporary deep financial prediction is less about replacing all feature engineering and more about combining preprocessing, representation learning, and sequence modeling.
+
+The most decision-oriented papers are Fischer and Krauss, Shen et al., Nakano et al., and Evans et al. Fischer and Krauss provide the strongest large-scale trading evidence, but also the clearest warning: the LSTM edge is strong from 1992 to 2009, while after 2010 its excess returns fluctuate around zero after transaction costs, suggesting that machine-learning trading signals can be arbitraged away \cite{fischer2018deep}. Shen et al. show that replacing a GRU softmax output with an SVM-style output improves signal classification, but their reported S\&P 500 accuracy is still only slightly above 50\% \cite{shen2018gru}. Nakano et al. find that technical-indicator inputs outperform raw return inputs for Bitcoin ANN trading; they also show that strategies can outperform buy-and-hold under realistic costs, but fail when the bid-ask spread is widened to 10 bps \cite{nakano2018bitcoin}. Evans et al. are relevant because they connect ANN outputs with genetic-algorithm trading design in intraday foreign exchange, rather than stopping at price prediction \cite{evans2013utilizing}.
+
+Therefore, the research gap is not simply that ``more deep learning'' is needed. The reviewed papers already cover DNN, CNN, LSTM, GRU, Elman RNN, SAE, PCA, wavelet transforms, genetic algorithms, and trading strategies. The real gaps are more practical: robustness across regimes, transaction costs, interpretability, portfolio-level decision rules, and whether a model improves financial outcomes beyond a narrow dataset. This is also why a project in financial engineering should benchmark not only forecast error, but also risk-adjusted return, drawdown, turnover, and stability across market states.
+
+\subsection{Integration with Quantum Finance and Applications in Financial Engineering}
+None of the reviewed papers directly tests quantum finance or quantum machine learning. This point should be made clearly, because otherwise the literature review would overstate what the cited evidence can support. The supplied literature supports the AI side of the project: feature construction, sequence modeling, signal classification, and trading evaluation. The quantum-finance part should therefore be positioned as our proposed extension, not as a conclusion already established by these studies.
+
+The most defensible integration is to use the neural model as the predictive layer and the quantum-inspired component as a state-representation or decision layer. The input side can follow the reviewed evidence: OHLC and technical indicators as in Singh and Srivastava, technical and macro variables as in Bao et al., correlation-aware feature organization as in Gunduz et al., and 240-day return sequences as in Fischer and Krauss and Shen et al. \cite{singh2017stock,bao2017deep,gunduz2017intraday,fischer2018deep,shen2018gru}. The model can then map these features into a probabilistic market-state vector, such as bullish, bearish, neutral, high-volatility, or distress-like states. This is not a claim of quantum advantage; it is a way of representing uncertainty before the trading or portfolio module makes a decision.
+
+The application layer should be judged by the standards used in the trading papers. Fischer and Krauss show that a model can have statistically significant predictive power and still lose its edge over time after transaction costs \cite{fischer2018deep}. Nakano et al. show that bid-ask spread assumptions can reverse the conclusion about whether an ANN trading strategy beats buy-and-hold \cite{nakano2018bitcoin}. Sun et al. show that risk prediction should be dynamic because the financial condition of the same firm can be classified differently as new longitudinal data arrive \cite{sun2011sffs}. These lessons imply that a quantum-inspired financial engineering system should be tested against classical baselines, transaction costs, and changing regimes. The empirical question is not whether the representation sounds quantum, but whether it improves forecast quality, risk control, or portfolio performance compared with the same neural model without the quantum-inspired state layer.
+
+Potential applications in financial engineering include:
+\begin{itemize}
+    \item \textbf{Return and direction prediction:} forecasting next-period return and upward/downward movement for equities, ETFs, indices, or cryptocurrencies.
+    \item \textbf{Automated factor discovery:} using deep feature extraction to identify latent predictive factors from raw market histories or technical indicators \cite{chong2017deep,bao2017deep}.
+    \item \textbf{Risk-aware trading signals:} using predicted direction only when the predicted risk class is acceptable, thereby filtering trades during high-volatility or unstable regimes.
+    \item \textbf{Intraday Forex and cryptocurrency trading:} applying the model to high-frequency exchange-rate or Bitcoin data, where ANN-based systems have been tested with trading-strategy layers \cite{evans2013utilizing,nakano2018bitcoin}.
+    \item \textbf{Structured feature learning:} organizing correlated technical indicators or grouped market variables before model training, following CNN and hierarchical DNN designs \cite{gunduz2017intraday,lachiheb2018hierarchical}.
+    \item \textbf{Portfolio allocation:} using predicted returns, risk states, and regime probabilities as inputs to portfolio optimization.
+    \item \textbf{Financial distress and credit monitoring:} extending the sequence model from market data to firm-level accounting streams, following the dynamic logic of Sun et al. \cite{sun2011sffs}.
+    \item \textbf{Scenario generation and stress testing:} using probabilistic market-state representations to simulate possible regime transitions and evaluate portfolio behavior under adverse conditions.
+    \item \textbf{Hybrid quantum-classical optimization:} using quantum-inspired optimization as a downstream decision module after the AI model estimates return and risk inputs, while benchmarking it against classical portfolio methods.
+\end{itemize}
+
+Overall, the reviewed literature justifies the use of neural networks for financial sequence prediction, but it also warns that model performance is context-dependent and must be judged by financial usefulness rather than accuracy alone. The quantum-finance component should therefore be framed as the project's proposed extension: a probabilistic and optimization-oriented layer built on top of AI forecasts, whose value must be demonstrated through comparison with non-quantum baselines.
+
+\section{Methodology}
+This section can describe the implemented data pipeline, quantum-inspired encoding module, GRU/LSTM architecture, training objective, evaluation metrics, and backtesting procedure.
+
+\section{Conclusion}
+This section can summarize the empirical findings of the project after experiments are completed.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
