@@ -21,20 +21,31 @@ from src.qf_project.utils import create_run_directory, ensure_directory, get_dev
 
 def _save_regime_plot(quantum_frame: pd.DataFrame, output_path: Path) -> None:
     try:
+        import matplotlib
+
+        matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-    except ImportError:
+    except Exception as exc:
+        print(f"Warning: matplotlib unavailable for regime plot: {exc}")
         return
 
-    plot_frame = quantum_frame[QUANTUM_REGIME_COLUMNS].tail(252)
-    figure, axis = plt.subplots(figsize=(10, 4))
-    plot_frame.plot.area(ax=axis, stacked=True, alpha=0.85)
-    axis.set_title("Born-rule market regime probabilities")
-    axis.set_ylabel("P(regime)")
-    axis.set_ylim(0.0, 1.0)
-    axis.legend(loc="upper left", fontsize=8)
-    figure.tight_layout()
-    figure.savefig(output_path, dpi=120)
-    plt.close(figure)
+    try:
+        plot_frame = quantum_frame[QUANTUM_REGIME_COLUMNS].tail(252)
+        figure, axis = plt.subplots(figsize=(10, 4))
+        plot_frame.plot.area(ax=axis, stacked=True, alpha=0.85)
+        axis.set_title("Born-rule market regime probabilities")
+        axis.set_ylabel("P(regime)")
+        axis.set_ylim(0.0, 1.0)
+        axis.legend(loc="upper left", fontsize=8)
+        figure.tight_layout()
+        figure.savefig(output_path, dpi=120)
+        plt.close(figure)
+    except Exception as exc:
+        print(f"Warning: could not save regime plot to {output_path}: {exc}")
+        try:
+            plt.close("all")
+        except Exception:
+            pass
 
 
 def run_pipeline(config_path: str) -> None:
