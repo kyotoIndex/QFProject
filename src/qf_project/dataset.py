@@ -9,6 +9,8 @@ import torch
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, Dataset
 
+from .quantum_encoding import QUANTUM_COLUMNS
+
 
 FEATURE_COLUMNS = [
     "return",
@@ -22,14 +24,6 @@ FEATURE_COLUMNS = [
     "macd",
     "macd_signal",
     "bollinger_position",
-]
-
-QUANTUM_COLUMNS = [
-    "q_bullish_low_vol",
-    "q_bullish_high_vol",
-    "q_neutral",
-    "q_bearish_low_vol",
-    "q_bearish_high_vol",
 ]
 
 

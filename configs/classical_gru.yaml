@@ -1,5 +1,5 @@
 project:
-  name: quantum_finance_vqc
+  name: quantum_finance_classical_baseline
   seed: 42
   output_dir: outputs
 
@@ -13,7 +13,7 @@ data:
   cache_dir: data_cache
 
 features:
-  lookback: 16
+  lookback: 30
   horizon: 1
   volatility_window: 20
   momentum_window: 10
@@ -37,22 +37,21 @@ quantum:
     - bearish_high_vol
 
 model:
-  type: vqc
-  dropout: 0.1
-  readout_hidden_size: 32
-  # Kept for the optional classical baseline in configs/classical_gru.yaml
+  type: classical
   recurrent_type: gru
   hidden_size: 64
   num_layers: 2
+  dropout: 0.2
   input_projection_size: 64
   mlp_hidden_size: 64
+  readout_hidden_size: 32
 
 training:
-  batch_size: 32
-  epochs: 12
-  learning_rate: 0.005
+  batch_size: 64
+  epochs: 30
+  learning_rate: 0.001
   weight_decay: 0.0001
-  early_stopping_patience: 4
+  early_stopping_patience: 5
   gradient_clip_norm: 1.0
   loss_weights:
     regression: 1.0

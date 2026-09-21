@@ -1,19 +1,18 @@
 project:
-  name: quantum_finance_vqc
+  name: quantum_finance_smoke
   seed: 42
   output_dir: outputs
 
 data:
   symbols:
     - AAPL
-    - SPY
-  start_date: "2015-01-01"
-  end_date: "2025-12-31"
+  start_date: "2022-01-01"
+  end_date: "2024-12-31"
   interval: 1d
   cache_dir: data_cache
 
 features:
-  lookback: 16
+  lookback: 8
   horizon: 1
   volatility_window: 20
   momentum_window: 10
@@ -25,9 +24,9 @@ features:
 quantum:
   encoding: qaoa_feature_map
   ansatz: hardware_efficient
-  n_qubits: 4
-  n_layers: 2
-  n_reuploads: 4
+  n_qubits: 3
+  n_layers: 1
+  n_reuploads: 2
   temperature: 1.0
   states:
     - bullish_low_vol
@@ -38,21 +37,20 @@ quantum:
 
 model:
   type: vqc
-  dropout: 0.1
-  readout_hidden_size: 32
-  # Kept for the optional classical baseline in configs/classical_gru.yaml
+  dropout: 0.0
+  readout_hidden_size: 16
   recurrent_type: gru
-  hidden_size: 64
-  num_layers: 2
-  input_projection_size: 64
-  mlp_hidden_size: 64
+  hidden_size: 32
+  num_layers: 1
+  input_projection_size: 32
+  mlp_hidden_size: 32
 
 training:
   batch_size: 32
-  epochs: 12
-  learning_rate: 0.005
-  weight_decay: 0.0001
-  early_stopping_patience: 4
+  epochs: 2
+  learning_rate: 0.01
+  weight_decay: 0.0
+  early_stopping_patience: 2
   gradient_clip_norm: 1.0
   loss_weights:
     regression: 1.0

@@ -7,15 +7,34 @@ from pathlib import Path
 import pandas as pd
 import torch
 
+from src.qf_project.backtest import run_backtest
 from src.qf_project.data import download_market_data
 from src.qf_project.dataset import build_dataloaders, build_model_inputs
 from src.qf_project.evaluate import evaluate_model
 from src.qf_project.features import engineer_features
-from src.qf_project.model import QuantumFinanceModel
-from src.qf_project.quantum_encoding import encode_quantum_states
+from src.qf_project.model import build_model
+from src.qf_project.quantum_circuit import circuit_metadata
+from src.qf_project.quantum_encoding import QUANTUM_REGIME_COLUMNS, encode_quantum_states
 from src.qf_project.train import train_model
-from src.qf_project.backtest import run_backtest
 from src.qf_project.utils import create_run_directory, ensure_directory, get_device, load_config, set_seed
+
+
+def _save_regime_plot(quantum_frame: pd.DataFrame, output_path: Path) -> None:
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return
+
+    plot_frame = quantum_frame[QUANTUM_REGIME_COLUMNS].tail(252)
+    figure, axis = plt.subplots(figsize=(10, 4))
+    plot_frame.plot.area(ax=axis, stacked=True, alpha=0.85)
+    axis.set_title("Born-rule market regime probabilities")
+    axis.set_ylabel("P(regime)")
+    axis.set_ylim(0.0, 1.0)
+    axis.legend(loc="upper left", fontsize=8)
+    figure.tight_layout()
+    figure.savefig(output_path, dpi=120)
+    plt.close(figure)
 
 
 def run_pipeline(config_path: str) -> None:
@@ -25,6 +44,16 @@ def run_pipeline(config_path: str) -> None:
     output_root = ensure_directory(config["project"]["output_dir"])
     run_dir = create_run_directory(output_root)
     device = get_device()
+    metadata = circuit_metadata(config["quantum"])
+
+    with open(run_dir / "config_used.json", "w", encoding="utf-8") as file:
+        json.dump(config, file, indent=2)
+    with open(run_dir / "quantum_circuit.json", "w", encoding="utf-8") as file:
+        json.dump(metadata, file, indent=2)
+    (run_dir / "quantum_circuit.txt").write_text(
+        metadata["feature_map_diagram"] + "\n\n" + metadata["vqc_diagram"] + "\n",
+        encoding="utf-8",
+    )
 
     market_data = download_market_data(
         symbols=config["data"]["symbols"],
@@ -34,7 +63,17 @@ def run_pipeline(config_path: str) -> None:
         cache_dir=config["data"]["cache_dir"],
     )
 
-    summary = {}
+    summary = {
+        "model_type": config["model"].get("type", "vqc"),
+        "quantum": {
+            "n_qubits": metadata["n_qubits"],
+            "n_layers": metadata["n_layers"],
+            "n_reuploads": metadata["n_reuploads"],
+            "hilbert_dimension": metadata["hilbert_dimension"],
+            "trainable_circuit_parameters": metadata["trainable_circuit_parameters"],
+        },
+        "symbols": {},
+    }
 
     for symbol, frame in market_data.items():
         symbol_dir = Path(run_dir) / symbol.replace("^", "")
@@ -49,6 +88,8 @@ def run_pipeline(config_path: str) -> None:
         )
         quantum_frame = encode_quantum_states(feature_frame, temperature=config["quantum"]["temperature"])
         dataset_frame = pd.concat([feature_frame, quantum_frame], axis=1).dropna().copy()
+        quantum_frame.to_csv(symbol_dir / "quantum_state_probabilities.csv")
+        _save_regime_plot(quantum_frame, symbol_dir / "quantum_regime_probabilities.png")
 
         inputs = build_model_inputs(
             dataset_frame,
@@ -59,16 +100,7 @@ def run_pipeline(config_path: str) -> None:
         )
         dataloaders = build_dataloaders(inputs["splits"], batch_size=config["training"]["batch_size"])
 
-        model = QuantumFinanceModel(
-            input_size=len(inputs["feature_columns"]),
-            recurrent_type=config["model"]["recurrent_type"],
-            hidden_size=config["model"]["hidden_size"],
-            num_layers=config["model"]["num_layers"],
-            dropout=config["model"]["dropout"],
-            input_projection_size=config["model"]["input_projection_size"],
-            mlp_hidden_size=config["model"]["mlp_hidden_size"],
-        )
-
+        model = build_model(config, input_size=len(inputs["feature_columns"]))
         model, history = train_model(model, dataloaders, device, config["training"])
         torch.save(model.state_dict(), symbol_dir / "best_model.pt")
         pd.DataFrame(history).to_csv(symbol_dir / "training_history.csv", index=False)
@@ -77,7 +109,7 @@ def run_pipeline(config_path: str) -> None:
         test_results = evaluate_model(model, dataloaders["test"], device, symbol_dir, "test")
         backtest_summary = run_backtest(test_results["collected"], config["strategy"], symbol_dir, "test")
 
-        summary[symbol] = {
+        summary["symbols"][symbol] = {
             "validation_metrics": val_results["metrics"],
             "test_metrics": test_results["metrics"],
             "backtest": backtest_summary,

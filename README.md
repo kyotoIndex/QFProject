@@ -1,295 +1,171 @@
-# Quantum Finance Project Usage Guide
+# Quantum Finance: Variational Quantum Circuits for Market Prediction
 
-## Overview
-This project implements a neural-network-based quantum finance system for market prediction and risk analysis. It combines conventional financial time-series features with quantum-inspired market state encoding, then uses a GRU or LSTM model to predict:
+This project is a **gate-level quantum machine learning system** for financial time series. It no longer uses a classical softmax as a stand-in for quantum behaviour. Market data is prepared as a real quantum state, evolved by unitary gates, and read out with the Born rule. Predictions come from a **variational quantum circuit (VQC)** with hardware-efficient entanglement.
 
-- next-period return
-- next-period direction
-- risk level
-- simple trading signals for backtesting
+A classical GRU/LSTM baseline is still available for comparison.
 
-The full pipeline is executed from `main.py`.
+## What is actually quantum
 
-## Project Structure
+| Piece | Quantum content |
+| --- | --- |
+| Market feature map | 3-qubit QAOA-style circuit: Hadamard superposition, data-dependent RZ/RY rotations, CNOT entanglement |
+| State | Complex statevector in a \(2^n\)-dimensional Hilbert space |
+| Dynamics | Unitary gates only: RY, RZ, H, CNOT |
+| Readout | Computational-basis probabilities \(P(i)=\lvert\langle i\mid\psi\rangle\rvert^2\) and Pauli-Z / ZZ expectations |
+| Predictor | Data-reuploading hardware-efficient VQC, trained as a hybrid QNN / VQE-style loop |
+| Hardware mapping | The ansatz uses single-qubit rotations and a CNOT ring, the same gate set used on NISQ devices |
+
+The circuits are simulated classically with an exact statevector backend. That is standard NISQ research practice: the **algorithm is a quantum algorithm**, even when the execution engine is a simulator.
+
+## Pipeline
+
+1. Download OHLCV data with `yfinance` and cache it
+2. Build classical technical indicators (momentum, volatility, RSI, MACD, Bollinger)
+3. Encode each day into a 3-qubit market state and measure Born-rule regime probabilities
+4. Compress the lookback window onto `n` qubits and run a trainable VQC with data re-uploading
+5. Read Pauli observables and predict next-day return, direction, and risk class
+6. Convert predictions into trade signals and backtest
 
 ```text
-QF Group Project/
-├── configs/
-│   └── default.yaml
-├── data_cache/
-├── outputs/
-├── src/
-│   └── qf_project/
-│       ├── __init__.py
-│       ├── backtest.py
-│       ├── data.py
-│       ├── dataset.py
-│       ├── evaluate.py
-│       ├── features.py
-│       ├── model.py
-│       ├── quantum_encoding.py
-│       ├── train.py
-│       └── utils.py
-├── main.py
-└── requirements.txt
+price history
+    -> technical features
+    -> H/RZ/RY/CNOT feature map
+    -> Born-rule probabilities
+    -> angle encoding + hardware-efficient VQC
+    -> <Z>, <ZZ>
+    -> return / direction / risk
+    -> backtest
 ```
 
-## Environment Setup
+## Project structure
 
-### Option 1: Use the existing conda environment
-If you already have a conda environment named `torch`, use:
-
-```bash
-conda run -n torch python -c "import torch, pandas, numpy, sklearn, yfinance, yaml, matplotlib; print('deps-ok')"
+```text
+configs/
+  default.yaml           # variational quantum model
+  classical_gru.yaml     # optional GRU baseline
+  smoke.yaml             # short run for sanity checks
+src/qf_project/
+  quantum_gates.py       # batched statevector gates
+  quantum_circuit.py     # QAOA feature map + VQC
+  quantum_encoding.py    # market-state preparation
+  model.py               # hybrid VQC model and classical baseline
+  features.py            # technical indicators
+  dataset.py             # rolling windows and labels
+  train.py / evaluate.py / backtest.py
+main.py
+tests/test_quantum.py
 ```
 
-### Option 2: Install dependencies manually
-Install the required Python packages:
+## Setup
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Dependencies listed in `requirements.txt`:
+## Run
 
-- torch
-- pandas
-- numpy
-- scikit-learn
-- yfinance
-- pyyaml
-- matplotlib
-
-## How to Run
-Run the full pipeline with the default configuration:
+Quantum model (default):
 
 ```bash
 python main.py --config configs/default.yaml
 ```
 
-If you want to use the conda `torch` environment directly:
+Classical GRU baseline:
 
 ```bash
-conda run -n torch python main.py --config configs/default.yaml
+python main.py --config configs/classical_gru.yaml
 ```
 
-## What the Pipeline Does
-The pipeline in `main.py` performs the following steps:
+Fast smoke run:
 
-1. Download market data with `yfinance`
-2. Cache raw data into `data_cache/`
-3. Generate technical indicators and financial features
-4. Encode quantum-inspired market state probabilities
-5. Build rolling window datasets
-6. Train a GRU or LSTM multi-task model
-7. Evaluate validation and test performance
-8. Run a simple trading backtest
-9. Save all outputs into a timestamped folder under `outputs/`
+```bash
+python main.py --config configs/smoke.yaml
+python -m unittest tests/test_quantum.py
+```
+
+## Quantum feature map
+
+Three qubits represent market factors:
+
+- `q0`: trend / momentum
+- `q1`: volatility / risk
+- `q2`: RSI / oscillator
+
+The circuit is:
+
+```text
+H^⊗3 |000>                     # uniform superposition over 8 basis states
+RZ(momentum) RZ(vol) RZ(rsi)   # data as a diagonal phase unitary
+CNOT ring                      # entanglement
+RY(momentum) RY(vol) RY(rsi)   # second encoding layer
+CNOT ring
+measure computational basis
+```
+
+Basis states are grouped into market regimes:
+
+| Regime | Basis states |
+| --- | --- |
+| bullish, low vol | `|000>` |
+| bullish, high vol | `|001>` |
+| neutral | `|010> + |011> + |100>` |
+| bearish, low vol | `|101>` |
+| bearish, high vol | `|110> + |111>` |
+
+Those probabilities are **measurement outcomes**, not a hand-written softmax.
+
+## Variational quantum predictor
+
+Default circuit: 4 qubits, 2 hardware-efficient layers, 4 data re-uploads.
+
+```text
+for t in 1..n_reuploads:
+  RY(x[t, i]) on each qubit      # angle encoding
+  for each ansatz layer:
+    RZ-RY-RZ on every qubit
+    CNOT q0->q1->q2->q3->q0     # entanglement
+measure <Z_i> and <Z_i Z_{i+1}>
+classical linear readout heads
+```
+
+Only a thin classical map is used, to fit a lookback window onto a few qubits. Sequence structure is handled by **quantum data re-uploading**, not by a GRU.
 
 ## Configuration
-The main configuration file is:
 
-- `configs/default.yaml`
+The important quantum block in `configs/default.yaml`:
 
-### Important config sections
-
-#### Data
-```yaml
-data:
-  symbols:
-    - AAPL
-    - SPY
-  start_date: "2015-01-01"
-  end_date: "2025-12-31"
-  interval: 1d
-  cache_dir: data_cache
-```
-
-- `symbols`: assets to train and evaluate
-- `start_date`, `end_date`: data range
-- `interval`: time interval for download
-- `cache_dir`: local CSV cache directory
-
-#### Feature settings
-```yaml
-features:
-  lookback: 30
-  horizon: 1
-  volatility_window: 20
-  momentum_window: 10
-  bollinger_window: 20
-  rsi_window: 14
-  train_ratio: 0.7
-  val_ratio: 0.15
-```
-
-- `lookback`: number of past timesteps used as model input
-- `horizon`: next-step prediction horizon
-- rolling windows define indicator calculation
-- `train_ratio` and `val_ratio` control time-based splitting
-
-#### Quantum-inspired encoding
 ```yaml
 quantum:
-  states:
-    - bullish_low_vol
-    - bullish_high_vol
-    - neutral
-    - bearish_low_vol
-    - bearish_high_vol
+  encoding: qaoa_feature_map
+  ansatz: hardware_efficient
+  n_qubits: 4
+  n_layers: 2
+  n_reuploads: 4
   temperature: 1.0
-```
 
-This module converts market conditions into probability-like state vectors representing uncertainty and regime superposition.
-
-#### Model
-```yaml
 model:
-  recurrent_type: gru
-  hidden_size: 64
-  num_layers: 2
-  dropout: 0.2
-  input_projection_size: 64
-  mlp_hidden_size: 64
+  type: vqc
 ```
 
-- `recurrent_type`: choose `gru` or `lstm`
-- other parameters control model capacity
+Set `model.type: classical` to train the old GRU/LSTM baseline.
 
-#### Training
-```yaml
-training:
-  batch_size: 64
-  epochs: 30
-  learning_rate: 0.001
-  weight_decay: 0.0001
-  early_stopping_patience: 5
-  gradient_clip_norm: 1.0
-```
+## Outputs
 
-#### Strategy
-```yaml
-strategy:
-  buy_threshold: 0.002
-  sell_threshold: -0.002
-  high_risk_class: 2
-```
+Each run writes `outputs/YYYYMMDD_HHMMSS/`:
 
-These thresholds convert predictions into buy / hold / sell signals.
-
-## Output Files
-Each run creates a new timestamped directory:
-
-```text
-outputs/YYYYMMDD_HHMMSS/
-```
-
-Inside it, each symbol gets its own folder, for example:
-
-```text
-outputs/20260428_161044/
-├── AAPL/
-│   ├── best_model.pt
-│   ├── training_history.csv
-│   ├── val_metrics.json
-│   ├── val_predictions.csv
-│   ├── test_metrics.json
-│   ├── test_predictions.csv
-│   ├── test_backtest.json
-│   └── test_backtest.csv
-├── SPY/
-│   └── ...
-└── summary.json
-```
-
-### File meanings
-- `best_model.pt`: saved trained model weights
-- `training_history.csv`: epoch-level training progress
-- `val_metrics.json`: validation metrics
-- `test_metrics.json`: test metrics
-- `test_predictions.csv`: detailed predictions and targets
-- `test_backtest.json`: summary of trading performance
-- `test_backtest.csv`: signal-level backtest records
-- `summary.json`: combined summary across all symbols
+- `quantum_circuit.txt` / `quantum_circuit.json`: gate-level circuit description
+- `AAPL/quantum_state_probabilities.csv`: daily Born-rule probabilities
+- `AAPL/quantum_regime_probabilities.png`: stacked regime probabilities
+- `best_model.pt`, metrics, predictions, and backtest files as before
 
 ## Metrics
-The project currently reports:
 
-### Prediction metrics
-- RMSE
-- MAE
-- Direction accuracy
-- Direction F1
-- Risk macro F1
-
-### Backtest metrics
-- cumulative return
-- annualized Sharpe ratio
-- maximum drawdown
-- hit rate
-- active ratio
-
-## How to Switch GRU and LSTM
-In `configs/default.yaml`, change:
-
-```yaml
-model:
-  recurrent_type: gru
-```
-
-to:
-
-```yaml
-model:
-  recurrent_type: lstm
-```
-
-Then rerun:
-
-```bash
-python main.py --config configs/default.yaml
-```
-
-## How to Change Assets
-To test different stocks or indices, edit:
-
-```yaml
-data:
-  symbols:
-    - AAPL
-    - SPY
-```
-
-Examples:
-
-```yaml
-data:
-  symbols:
-    - MSFT
-    - QQQ
-```
-
-or:
-
-```yaml
-data:
-  symbols:
-    - TSLA
-    - ^GSPC
-```
+Prediction: RMSE, MAE, direction accuracy / F1, risk macro-F1  
+Backtest: cumulative return, Sharpe, max drawdown, hit rate, active ratio
 
 ## Notes
-- The project is quantum-inspired, not quantum-computing-based.
-- It does not require quantum hardware or quantum libraries.
-- Market state uncertainty is represented through probability-style feature encoding.
-- The current implementation is suitable for coursework, demonstration, and further model experimentation.
 
-## Recommended Next Steps
-Possible improvements include:
-
-- add more assets and sector indices
-- compare GRU vs LSTM systematically
-- tune lookback window and hidden size
-- improve signal generation logic
-- add visualization for prediction and backtest curves
-- extend the report with economic interpretation of the quantum-inspired states
+- This is a hybrid NISQ algorithm: quantum evolution + classical parameter updates.
+- Exact statevector simulation is exponential in qubit count. The default 3–4 qubits is intentional.
+- The same ansatz can be sent to real hardware later (IBM / IonQ) because it only uses RY, RZ, H, and CNOT.
+- The classical GRU config is there for ablation, not as the main model.
