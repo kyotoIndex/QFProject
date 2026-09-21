@@ -4,10 +4,12 @@ import math
 import unittest
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import torch
 import yaml
 
+from src.qf_project.benchmark import evaluate_prediction_frame
 from src.qf_project.model import VariationalQuantumFinanceModel, build_model
 from src.qf_project.quantum_circuit import HardwareEfficientVQC, qaoa_inspired_market_circuit
 from src.qf_project.quantum_encoding import QUANTUM_COLUMNS, encode_quantum_states
@@ -125,6 +127,45 @@ class EncodingAndModelTests(unittest.TestCase):
         config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         model = build_model(config, input_size=24)
         self.assertIsInstance(model, VariationalQuantumFinanceModel)
+
+
+class BenchmarkTests(unittest.TestCase):
+    def test_always_up_matches_majority_baseline(self) -> None:
+        actual = np.array([0.01, 0.02, -0.01, 0.03, 0.00, 0.04, -0.02, 0.01])
+        frame = pd.DataFrame(
+            {
+                "predicted_return": np.full(len(actual), 0.01),
+                "predicted_direction_probability": np.ones(len(actual)),
+                "predicted_risk_class": np.zeros(len(actual), dtype=int),
+                "actual_return": actual,
+                "actual_direction": (actual > 0).astype(int),
+                "actual_risk_class": np.zeros(len(actual), dtype=int),
+            }
+        )
+        report = evaluate_prediction_frame(frame)
+        self.assertAlmostEqual(report["direction"]["accuracy"], report["direction"]["majority_class_accuracy"])
+        self.assertAlmostEqual(report["direction"]["predicted_up_rate"], 1.0)
+        self.assertGreater(report["backtest"]["buy_and_hold"]["cumulative_return"], -1.0)
+
+    def test_perfect_sign_forecast_beats_majority(self) -> None:
+        actual = np.array([0.02, -0.03, 0.01, -0.04, 0.05, -0.01, 0.02, -0.02])
+        frame = pd.DataFrame(
+            {
+                "predicted_return": actual,
+                "predicted_direction_probability": (actual > 0).astype(float),
+                "predicted_risk_class": np.zeros(len(actual), dtype=int),
+                "actual_return": actual,
+                "actual_direction": (actual > 0).astype(int),
+                "actual_risk_class": np.zeros(len(actual), dtype=int),
+            }
+        )
+        report = evaluate_prediction_frame(frame)
+        self.assertGreater(report["direction"]["accuracy"], report["direction"]["majority_class_accuracy"])
+        self.assertGreater(
+            report["backtest"]["model_strategy"]["cumulative_return"],
+            report["backtest"]["buy_and_hold"]["cumulative_return"],
+        )
+        self.assertAlmostEqual(report["prediction"]["return_correlation"], 1.0, places=6)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,78 @@
+{
+  "left": {
+    "name": "vqc",
+    "run_dir": "outputs/20260921_145341",
+    "model_type": "vqc"
+  },
+  "right": {
+    "name": "gru",
+    "run_dir": "outputs/20260921_150346",
+    "model_type": "classical"
+  },
+  "rows": [
+    {
+      "model": "vqc",
+      "symbol": "AAPL",
+      "direction_accuracy": 0.5378973105134475,
+      "majority_accuracy": 0.5721271393643031,
+      "predicted_up_rate": 0.8533007334963325,
+      "return_correlation": -0.04604762800730026,
+      "rmse": 0.01910761493543561,
+      "zero_predictor_rmse": 0.018265911364515892,
+      "strategy_return": -0.4168150286510037,
+      "buy_and_hold_return": 0.5053826369189498,
+      "strategy_sharpe": -1.1309845604554571,
+      "hold_sharpe": 1.0145691262145287
+    },
+    {
+      "model": "gru",
+      "symbol": "AAPL",
+      "direction_accuracy": 0.5721271393643031,
+      "majority_accuracy": 0.5721271393643031,
+      "predicted_up_rate": 1.0,
+      "return_correlation": 0.05429954589734084,
+      "rmse": 0.02937045274217332,
+      "zero_predictor_rmse": 0.018265911364515892,
+      "strategy_return": -0.05207619102504324,
+      "buy_and_hold_return": 0.5053826369189498,
+      "strategy_sharpe": -0.08776326763290528,
+      "hold_sharpe": 1.0145691262145287
+    },
+    {
+      "model": "vqc",
+      "symbol": "SPY",
+      "direction_accuracy": 0.5965770171149144,
+      "majority_accuracy": 0.5965770171149144,
+      "predicted_up_rate": 1.0,
+      "return_correlation": -0.006260086205519111,
+      "rmse": 0.01327382741877099,
+      "zero_predictor_rmse": 0.010903331783541147,
+      "strategy_return": 0.08694243723706996,
+      "buy_and_hold_return": 0.3589812617018564,
+      "strategy_sharpe": 0.7020340252181659,
+      "hold_sharpe": 1.1809460382280537
+    },
+    {
+      "model": "gru",
+      "symbol": "SPY",
+      "direction_accuracy": 0.5965770171149144,
+      "majority_accuracy": 0.5965770171149144,
+      "predicted_up_rate": 1.0,
+      "return_correlation": -0.014013789761782577,
+      "rmse": 0.017674738050327744,
+      "zero_predictor_rmse": 0.010903331783541147,
+      "strategy_return": -0.2563318145324309,
+      "buy_and_hold_return": 0.3589812617018564,
+      "strategy_sharpe": -1.9175590101627757,
+      "hold_sharpe": 1.1809460382280537
+    }
+  ],
+  "left_verdict": [
+    "AAPL: not better than naive baselines (dir 53.8% vs majority 57.2%, corr -0.046, strategy -41.7% vs hold 50.5%)",
+    "SPY: not better than naive baselines (dir 59.7% vs majority 59.7%, corr -0.006, strategy 8.7% vs hold 35.9%)"
+  ],
+  "right_verdict": [
+    "AAPL: weak / mixed (dir 57.2% vs majority 57.2%, corr 0.054, strategy -5.2% vs hold 50.5%)",
+    "SPY: not better than naive baselines (dir 59.7% vs majority 59.7%, corr -0.014, strategy -25.6% vs hold 35.9%)"
+  ]
+}

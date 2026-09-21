@@ -163,6 +163,41 @@ Each run writes `outputs/YYYYMMDD_HHMMSS/`:
 Prediction: RMSE, MAE, direction accuracy / F1, risk macro-F1  
 Backtest: cumulative return, Sharpe, max drawdown, hit rate, active ratio
 
+Raw `summary.json` numbers are easy to over-read. After training, compare a run with naive baselines:
+
+```bash
+python main.py --config configs/default.yaml
+python main.py --config configs/fair_classical.yaml
+python scripts/compare_runs.py outputs/<vqc_run> outputs/<gru_run> --left-name vqc --right-name gru
+```
+
+The important checks are:
+
+- direction accuracy vs the majority class (always-up in a bull market)
+- return correlation vs 0
+- RMSE vs a constant-0 predictor
+- strategy return vs buy-and-hold
+
+## Does the default model actually predict well?
+
+On the 2015–2025 AAPL/SPY split, with a matched 12-epoch GRU ablation, **no**. The quantum circuit is working; the forecasts are not.
+
+| symbol | model | direction acc | majority (always-up) | predicted up rate | return corr | RMSE | predict-0 RMSE | strategy | buy & hold |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| AAPL | VQC | 53.8% | 57.2% | 85.3% | -0.046 | 0.0191 | 0.0183 | -41.7% | +50.5% |
+| AAPL | GRU | 57.2% | 57.2% | 100% | +0.054 | 0.0294 | 0.0183 | -5.2% | +50.5% |
+| SPY | VQC | 59.7% | 59.7% | 100% | -0.006 | 0.0133 | 0.0109 | +8.7% | +35.9% |
+| SPY | GRU | 59.7% | 59.7% | 100% | -0.014 | 0.0177 | 0.0109 | -25.6% | +35.9% |
+
+What that means:
+
+- SPY “59.7% direction accuracy” is not skill. The VQC and the GRU both predicted **up every day**. The test set was a bull market, so always-up also scores 59.7%.
+- AAPL VQC is worse than always-up (53.8% vs 57.2%) and has **negative** correlation with next-day returns.
+- RMSE is worse than predicting 0 every day, so the return head is not useful.
+- The trading overlay (threshold + short + high-risk filter) loses to buy-and-hold on both assets.
+
+This is a valid NISQ-style quantum ML demo. It is not a profitable signal. Daily equity returns are close to noise at this horizon; collapsing to “always up” is the usual failure mode for both the VQC and the GRU.
+
 ## Notes
 
 - This is a hybrid NISQ algorithm: quantum evolution + classical parameter updates.
